@@ -9,19 +9,9 @@ class FoodListView(ListAPIView):
     serializer_class = FoodListSerializer
 
     def get_queryset(self):
-        return FoodCategory.objects.prefetch_related(
-            Prefetch(
-                'food',
-                queryset=Food.objects.filter(is_publish=True)
-            )
-        ).annotate(
-            published_food_count=Count(
-                'food',
-                filter=Q(food__is_publish=True)
-            )
-        ).filter(
-            published_food_count__gt=0
-        ).order_by('order_id', 'name_ru')
+        food_queryset = Food.objects.filter(is_publish=True)
+        return FoodCategory.objects.annotate(total=Count('food')).filter(total__gt=0, food__is_publish=True) \
+            .prefetch_related(Prefetch('food__additional', queryset=food_queryset))
 
 
 def index(request):
